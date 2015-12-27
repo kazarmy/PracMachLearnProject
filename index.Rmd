@@ -12,7 +12,7 @@ opts_chunk$set(cache_extra = rand_seed)
 
 This is just a short note describing two prediction models, first an 
 almost-100%-guaranteed-on-test-set prediction model that takes advantage of a 
-particular characteristic of the source dataset [1], and second a prediction 
+particular characteristic of the source data set [1], and second a prediction 
 model that is based only on activity monitor readings in the training set. Both
 prediction models have been tested on the 20 test cases.
 

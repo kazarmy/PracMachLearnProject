@@ -68,7 +68,7 @@ img {
 </div>
 
 
-<p>This is just a short note describing two prediction models, first an almost-100%-guaranteed-on-test-set prediction model that takes advantage of a particular characteristic of the source dataset [1], and second a prediction model that is based only on activity monitor readings in the training set. Both prediction models have been tested on the 20 test cases.</p>
+<p>This is just a short note describing two prediction models, first an almost-100%-guaranteed-on-test-set prediction model that takes advantage of a particular characteristic of the source data set [1], and second a prediction model that is based only on activity monitor readings in the training set. Both prediction models have been tested on the 20 test cases.</p>
 <p>First, we load the training and test sets into R, and set an option to print numeric values in fixed notation. For reproducibility, we set the random seed as well.</p>
 <pre class="r"><code>training &lt;- read.csv(&quot;pml-training.csv&quot;, na.strings = c(&quot;NA&quot;, &quot;#DIV/0!&quot;, &quot;&quot;))
 testing &lt;- read.csv(&quot;pml-testing.csv&quot;, na.strings = c(&quot;NA&quot;, &quot;#DIV/0!&quot;, &quot;&quot;))
