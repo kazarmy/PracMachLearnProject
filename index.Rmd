@@ -1,0 +1,147 @@
+---
+title: "The Data Science Specialization Practical Machine Learning Project"
+author: "Khairul Azhar Kasmiran"
+date: "December 27, 2015"
+output: html_document
+---
+
+```{r, echo=FALSE}
+library(knitr)
+opts_chunk$set(cache_extra = rand_seed)
+```
+
+This is just a short note describing two prediction models, first an 
+almost-100%-guaranteed-on-test-set prediction model that takes advantage of a 
+particular characteristic of the source dataset [1], and second a prediction 
+model that is based only on activity monitor readings in the training set. Both
+prediction models have been tested on the 20 test cases.
+
+First, we load the training and test sets into R, and set an option to print
+numeric values in fixed notation. For reproducibility, we set the random seed
+as well.
+
+```{r}
+training <- read.csv("pml-training.csv", na.strings = c("NA", "#DIV/0!", ""))
+testing <- read.csv("pml-testing.csv", na.strings = c("NA", "#DIV/0!", ""))
+options(scipen=999)
+set.seed(32323)
+```
+
+## The almost-100%-guaranteed-on-test-set prediction model
+
+This prediction model takes advantage of the following findings from training 
+set exploration:
+
+ 1. Every observation is assigned a window number.
+ 1. The exercise class is the same for every observation in a window.
+
+We reasonably assume that the training and test sets have been produced by 
+partitioning the source data set, and therefore the test set observations have 
+window numbers that directly correspond to the window numbers of the training 
+set observations. Thus, we expect that a complete decision tree that determines 
+the exercise class *based only on the window number* should have extremely low 
+error on the test set, and also an extremely low estimated out-of-sample error.
+
+We obtain such a complete decision tree with strictly homogeneous leaves using
+the `caret` package below. The resampling method has been set to "none" using
+`trControl = trainControl("none")` so that the decision tree is fitted on the
+entire training set. The `minbucket = 1` and `minsplit = 2` allow strictly
+homogeneous leaves while `cp = 0.00001` will cause the rpart method in this case
+to split all nodes that can possibly be split.
+
+```{r, message=FALSE}
+library(caret)
+(modFit1 <- train(classe ~ num_window, training,
+                  control = rpart.control(minbucket = 1, minsplit = 2),
+                  method = "rpart", trControl = trainControl("none"),
+                  tuneGrid = data.frame(cp = 0.00001)))
+```
+
+Using the decision tree to predict on the testing data set results in 0% errors.
+
+To obtain a (somewhat meaningless) out-of-sample error estimate, we execute the
+`train()` function again, but with the resampling method set to 10-fold cross
+validation. This particular number of folds is chosen becuase it is the default.
+
+```{r}
+(modFit1.cv <- train(classe ~ num_window, training,
+                     control = rpart.control(minbucket = 1, minsplit = 2),
+                     method = "rpart", trControl = trainControl("cv"),
+                     tuneGrid = data.frame(cp = 0.00001)))
+```
+
+The *estimated* out-of-sample error is `r 1 - modFit1.cv$results["Accuracy"]`
+which is extremely close to 0%. We suspect that leave-one-out cross validation
+will show an estimated error of 0% but we do not test this since there are 19622
+observations in the training set and thus the time taken will be prohibitive.
+Anyway, the *real* out of sample error will probably be far higher, since there
+is no strong connection between window number and exercise manner (well, it
+might be that higher window numbers have a better chance of getting 'A's,
+reflecting the effects of training, but investigating that is outside the scope
+of this note).
+
+The reasons this prediction model is *almost* 100% guaranteed are because it
+might fall down if the testing set has window numbers that are not in the
+training set. This can happen since there are window numbers with 1 or 2
+observations as shown below, but this is unlikely because the total number of
+observations is very large. Also, this model is not robust against errors when
+assigning exercise classes to windows.
+
+```{r}
+counts <- table(training$num_window)
+counts[counts <= 2]
+```
+
+## An activity monitor prediction model
+
+Here, we obtain a prediction model based only on the activity monitor readings 
+in the training data set. The random forest method is used due to 
+recommendations in the lecture notes. Note that this prediction model is for
+predicting on single observations, and not on a time series or window of
+observations. Since a single observation is just a snapshot of the activity
+being done, we expect that this model will have a moderate-to-high estimated
+out-of-sample error.
+
+We remove all columns from the training data set that are not based on the
+activity monitors.
+
+```{r}
+training.act <- training[, !(names(training) %in%
+                                 c("X", "user_name", "raw_timestamp_part_1",
+                                   "raw_timestamp_part_2", "cvtd_timestamp",
+                                   "new_window", "num_window"))]
+```
+
+Browsing the training set in Excel reveals that some columns appear to have 
+values only once per window resulting in a lot of NA's in the column. We remove 
+them too to simplify training and becuase it isn't likely that the individual 
+test set observations have values for them. Future work might find it worthwhile
+to replicate these window values along the entire corresponding window along the 
+entire data set.
+
+```{r}
+training.act <- training.act[, colSums(is.na(training.act)) <
+                                 nrow(training.act) * 0.5]
+```
+
+We then obtain a prediction model using the random forest method with 10-fold 
+cross-validation to estimate out-of-sample error. This particular number of
+folds is chosen becuase it is the default.
+
+```{r, cache=TRUE, message=FALSE}
+(modFit2 <- train(classe ~ ., training.act, method = "rf",
+                  trControl = trainControl("cv")))
+```
+
+The random forest method has performed beyond expectations with an estimated 
+out-of-sample error of `r 1 - modFit2$results[1, "Accuracy"]` for `mtry = 2` 
+which is close to 0%. Its error on the test set, using the known correct results
+of the previous prediction model, is `r sum(predict(modFit1, testing) != 
+predict(modFit2, testing)) / nrow(testing) * 100`%.
+
+## References
+
+ 1. Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative
+ Activity Recognition of Weight Lifting Exercises. Proceedings of 4th
+ International Conference in Cooperation with SIGCHI (Augmented Human '13).
+ Stuttgart, Germany: ACM SIGCHI, 2013.
