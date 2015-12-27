@@ -33,13 +33,14 @@ This prediction model takes advantage of the following findings from training
 set exploration:
 
  1. Every observation is assigned a window number.
- 1. The exercise class is the same for every observation in a window.
+ 1. The exercise class/activity quality is the same for every observation in a
+ window.
 
 We reasonably assume that the training and test sets have been produced by 
 partitioning the source data set, and therefore the test set observations have 
 window numbers that directly correspond to the window numbers of the training 
 set observations. Thus, we expect that a complete decision tree that determines 
-the exercise class *based only on the window number* should have extremely low 
+the activity quality *based only on the window number* should have extremely low
 error on the test set, and also an extremely low estimated out-of-sample error.
 
 We obtain such a complete decision tree with strictly homogeneous leaves using

@@ -79,9 +79,9 @@ set.seed(32323)</code></pre>
 <p>This prediction model takes advantage of the following findings from training set exploration:</p>
 <ol style="list-style-type: decimal">
 <li>Every observation is assigned a window number.</li>
-<li>The exercise class is the same for every observation in a window.</li>
+<li>The exercise class/activity quality is the same for every observation in a window.</li>
 </ol>
-<p>We reasonably assume that the training and test sets have been produced by partitioning the source data set, and therefore the test set observations have window numbers that directly correspond to the window numbers of the training set observations. Thus, we expect that a complete decision tree that determines the exercise class <em>based only on the window number</em> should have extremely low error on the test set, and also an extremely low estimated out-of-sample error.</p>
+<p>We reasonably assume that the training and test sets have been produced by partitioning the source data set, and therefore the test set observations have window numbers that directly correspond to the window numbers of the training set observations. Thus, we expect that a complete decision tree that determines the activity quality <em>based only on the window number</em> should have extremely low error on the test set, and also an extremely low estimated out-of-sample error.</p>
 <p>We obtain such a complete decision tree with strictly homogeneous leaves using the <code>caret</code> package below. The resampling method has been set to “none” using <code>trControl = trainControl(&quot;none&quot;)</code> so that the decision tree is fitted on the entire training set. The <code>minbucket = 1</code> and <code>minsplit = 2</code> allow strictly homogeneous leaves while <code>cp = 0.00001</code> will cause the rpart method in this case to split all nodes that can possibly be split.</p>
 <pre class="r"><code>library(caret)
 (modFit1 &lt;- train(classe ~ num_window, training,
